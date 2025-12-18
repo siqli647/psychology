@@ -1,13 +1,14 @@
+
 export enum QuestionType {
   Single = 'Single',
   Multi = 'Multi',
   TrueFalse = 'TrueFalse'
 }
 
-export enum Difficulty {
-  Beginner = 'Beginner', // 初学：直觉和常识
-  Intermediate = 'Intermediate', // 进阶：需要逻辑思考
-  Advanced = 'Advanced' // 专业：需要背诵和专业知识
+export enum QuizSection {
+  Part1 = 'Part1',
+  Part2 = 'Part2',
+  Part3 = 'Part3'
 }
 
 export interface Question {
@@ -16,7 +17,7 @@ export interface Question {
   options?: string[]; // A, B, C, D...
   correctAnswer: string | string[]; // "A" or ["A", "B"] or "True"
   type: QuestionType;
-  difficulty: Difficulty;
+  section: QuizSection;
   explanation?: string;
 }
 
