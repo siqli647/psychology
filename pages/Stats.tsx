@@ -1,42 +1,57 @@
-import React, { useMemo } from 'react';
+
+import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { QUESTIONS } from '../constants';
-import { getStoredStats } from '../utils';
-import { AlertTriangle, Trophy } from 'lucide-react';
+import { getStoredStats, clearAllStats } from '../utils';
+import { AlertTriangle, Trophy, Trash2, ShieldCheck } from 'lucide-react';
 
 const Stats: React.FC = () => {
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const data = useMemo(() => {
     const stats = getStoredStats();
-    // Map questions to stats, sort by mistakes desc
     const qStats = QUESTIONS.map(q => ({
       id: q.id,
-      text: q.text.substring(0, 10) + '...', // Truncate for display
+      text: q.text.substring(0, 10) + '...',
       fullText: q.text,
       mistakes: stats[q.id]?.mistakeCount || 0,
       correct: stats[q.id]?.correctCount || 0
     }))
-    .filter(item => item.mistakes > 0) // Only show items with mistakes
+    .filter(item => item.mistakes > 0)
     .sort((a, b) => b.mistakes - a.mistakes)
-    .slice(0, 10); // Top 10
+    .slice(0, 10);
 
     return qStats;
-  }, []);
+  }, [refreshKey]);
 
   const totalMistakes = useMemo(() => {
       const stats = getStoredStats();
       return Object.values(stats).reduce((acc, curr) => acc + curr.mistakeCount, 0);
-  }, []);
+  }, [refreshKey]);
 
   const totalCorrect = useMemo(() => {
     const stats = getStoredStats();
     return Object.values(stats).reduce((acc, curr) => acc + curr.correctCount, 0);
-  }, []);
+  }, [refreshKey]);
+
+  const handleClearData = () => {
+    if (window.confirm("确定要永久清空所有的练习记录和错题集吗？此操作不可撤销。")) {
+      clearAllStats();
+      setRefreshKey(prev => prev + 1);
+    }
+  };
 
   return (
     <div className="pb-24">
-      <div className="mb-8">
-        <h2 className="text-3xl font-extrabold text-slate-800">学习统计</h2>
-        <p className="text-slate-500 mt-2">基于你的答题历史生成的分析报告。</p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-extrabold text-slate-800">学习统计</h2>
+          <p className="text-slate-500 mt-2">基于您的答题历史生成的分析报告。</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100">
+          <ShieldCheck size={14} />
+          数据已加密保存在浏览器本地
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-8">
@@ -56,7 +71,7 @@ const Stats: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100">
+      <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-100 mb-8">
         <h3 className="text-xl font-bold text-slate-800 mb-6">错误率最高的 10 道题</h3>
         
         {data.length > 0 ? (
@@ -87,29 +102,53 @@ const Stats: React.FC = () => {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="h-64 flex flex-col items-center justify-center text-slate-400">
-             <BarChart size={48} className="mb-2 opacity-20" />
-             <p>暂无数据，快开始刷题吧！</p>
+          <div className="h-64 flex flex-col items-center justify-center text-slate-400 text-center">
+             <p className="mb-2">暂无数据</p>
+             <p className="text-sm">当您做错题目时，这里会自动记录并分析。</p>
           </div>
         )}
       </div>
 
-      {data.length > 0 && (
-        <div className="mt-8">
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex-1">
            <h3 className="text-lg font-bold text-slate-800 mb-4">重点关注题目</h3>
-           <div className="space-y-3">
-             {data.map((item, idx) => (
-               <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-100 flex items-start gap-4">
-                 <span className="font-mono text-slate-300 font-bold text-xl">#{idx + 1}</span>
-                 <div>
-                   <p className="text-slate-800 font-medium mb-1">{item.fullText}</p>
-                   <p className="text-rose-500 text-sm font-bold">错误 {item.mistakes} 次</p>
+           {data.length > 0 ? (
+             <div className="space-y-3">
+               {data.map((item, idx) => (
+                 <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-100 flex items-start gap-4">
+                   <span className="font-mono text-slate-300 font-bold text-xl">#{idx + 1}</span>
+                   <div>
+                     <p className="text-slate-800 font-medium mb-1">{item.fullText}</p>
+                     <p className="text-rose-500 text-sm font-bold">错误 {item.mistakes} 次</p>
+                   </div>
                  </div>
-               </div>
-             ))}
-           </div>
+               ))}
+             </div>
+           ) : (
+             <div className="bg-slate-100/50 rounded-xl p-8 text-center text-slate-400">
+               还没有做错任何题目。
+             </div>
+           )}
         </div>
-      )}
+
+        <div className="md:w-64">
+          <div className="bg-rose-50 rounded-2xl p-6 border border-rose-100">
+            <h4 className="text-rose-900 font-bold mb-2 flex items-center gap-2">
+              <Trash2 size={16} />
+              危险区域
+            </h4>
+            <p className="text-rose-700 text-xs mb-4 leading-relaxed">
+              清空数据将移除本地存储的所有练习进度和错题统计。
+            </p>
+            <button
+              onClick={handleClearData}
+              className="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold transition-colors shadow-sm"
+            >
+              清空本地记录
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

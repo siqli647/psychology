@@ -1,12 +1,25 @@
+
 import { UserStats } from './types';
 
+const STORAGE_KEY = 'psy_prep_stats_v2';
+
 export const getStoredStats = (): UserStats => {
-  const stored = localStorage.getItem('psy_prep_stats');
-  return stored ? JSON.parse(stored) : {};
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return {};
+    return JSON.parse(stored);
+  } catch (e) {
+    console.error("无法读取本地练习记录:", e);
+    return {};
+  }
 };
 
 export const saveStats = (stats: UserStats) => {
-  localStorage.setItem('psy_prep_stats', JSON.stringify(stats));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+  } catch (e) {
+    console.error("无法保存练习记录到本地:", e);
+  }
 };
 
 export const updateQuestionStats = (
@@ -28,6 +41,10 @@ export const updateQuestionStats = (
 
   saveStats(stats);
   return stats;
+};
+
+export const clearAllStats = () => {
+  localStorage.removeItem(STORAGE_KEY);
 };
 
 // Fisher-Yates shuffle

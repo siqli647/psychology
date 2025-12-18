@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { QUESTIONS } from '../constants';
 import { QuizSection, Question, QuestionType } from '../types';
 import { shuffleArray, updateQuestionStats } from '../utils';
-import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle2, XCircle, ArrowRight, Save } from 'lucide-react';
 
 const Quiz: React.FC = () => {
   const { difficulty: sectionParam } = useParams<{ difficulty: string }>();
@@ -15,6 +15,7 @@ const Quiz: React.FC = () => {
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [showSaveToast, setShowSaveToast] = useState(false);
 
   // Initialize Quiz
   useEffect(() => {
@@ -59,7 +60,13 @@ const Quiz: React.FC = () => {
 
     setIsCorrect(correct);
     setIsSubmitted(true);
+    
+    // 更新本地持久化统计
     updateQuestionStats(currentQuestion.id, correct);
+    
+    // 显示自动保存提示
+    setShowSaveToast(true);
+    setTimeout(() => setShowSaveToast(false), 2000);
   }, [currentQuestion, selectedAnswers]);
 
   const nextQuestion = () => {
@@ -110,7 +117,13 @@ const Quiz: React.FC = () => {
     : currentQuestion.options || [];
 
   return (
-    <div className="max-w-2xl mx-auto pb-24">
+    <div className="max-w-2xl mx-auto pb-24 relative">
+      {/* 自动保存提示 */}
+      <div className={`fixed top-20 right-4 bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 transition-all duration-300 z-50 ${showSaveToast ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+        <Save size={16} />
+        <span className="text-sm font-bold">进度已持久化保存</span>
+      </div>
+
       <div className="mb-6 flex items-center justify-between text-sm text-slate-500 font-medium">
         <span className="bg-slate-200 px-3 py-1 rounded-full text-slate-700">
           {sectionParam ? getSectionLabel(sectionParam) : '练习'}
