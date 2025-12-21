@@ -1,63 +1,72 @@
 import React from 'react';
-import { BookOpen, Layers, Zap } from 'lucide-react';
-import { DifficultyCard } from '../components/DifficultyCard';
+import { Play, AlertCircle, BarChart3 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { QUESTIONS } from '../constants';
-import { QuizSection } from '../types';
+import { getStoredStats } from '../utils';
 
 const Home: React.FC = () => {
-  const getCount = (section: QuizSection) => QUESTIONS.filter(q => q.section === section).length;
+  const stats = getStoredStats();
+  const mistakeCount = QUESTIONS.filter(q => (stats[q.id]?.mistakeCount || 0) > 0).length;
+  const answeredCount = Object.keys(stats).length;
 
   return (
-    <div className="space-y-8 pb-20 md:pb-0">
-      <div className="text-center space-y-3 mb-12">
-        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-          心理学考研刷题大师
+    <div className="space-y-8 pb-20">
+      <div className="text-center space-y-4 mb-12">
+        <h2 className="text-4xl font-black text-slate-900 tracking-tight">
+          心理学考研真题大师
         </h2>
-        <p className="text-slate-600 max-w-2xl mx-auto text-lg">
-          全库已囊括四份真题共计 <span className="text-indigo-600 font-bold">250</span> 道真题。题目按顺序分为三部分，助您无死角复习。
+        <p className="text-slate-500 max-w-xl mx-auto text-lg leading-relaxed">
+          已收录真题全库 <span className="text-indigo-600 font-bold">{QUESTIONS.length}</span> 道题目。
+          全量覆盖四份历年核心真题，不设分类。
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <DifficultyCard
-          title="第一部分 (Part 1)"
-          description="包含题目 1-83。侧重基础心理学与社会心理学内容。"
-          count={getCount(QuizSection.Part1)}
-          icon={BookOpen}
-          colorClass="bg-indigo-500"
-          linkTo={`/quiz/${QuizSection.Part1}`}
-        />
-        <DifficultyCard
-          title="第二部分 (Part 2)"
-          description="包含题目 84-166。涵盖发展、咨询及变态心理学重点考点。"
-          count={getCount(QuizSection.Part2)}
-          icon={Layers}
-          colorClass="bg-violet-500"
-          linkTo={`/quiz/${QuizSection.Part2}`}
-        />
-        <DifficultyCard
-          title="第三部分 (Part 3)"
-          description="包含题目 167-250。聚焦心理测量、综合知识及高频考点复习。"
-          count={getCount(QuizSection.Part3)}
-          icon={Zap}
-          colorClass="bg-fuchsia-500"
-          linkTo={`/quiz/${QuizSection.Part3}`}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Link to="/quiz/all" className="relative group overflow-hidden bg-indigo-600 rounded-[2.5rem] p-10 shadow-2xl shadow-indigo-200 transition-all hover:scale-[1.02] active:scale-95">
+          <div className="relative z-10 flex flex-col h-full justify-between gap-8">
+            <div className="bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center text-white">
+              <Play fill="currentColor" size={32} />
+            </div>
+            <div>
+              <h3 className="text-3xl font-black text-white mb-2">全库顺序练习</h3>
+              <p className="text-indigo-100 font-medium">按顺序挑战全部 691 道真题，沉浸式刷题体验。</p>
+            </div>
+            <div className="text-indigo-100 text-sm font-bold uppercase tracking-widest">
+              总进度: {answeredCount} / {QUESTIONS.length}
+            </div>
+          </div>
+          <div className="absolute -right-12 -bottom-12 bg-white/10 w-64 h-64 rounded-full group-hover:scale-150 transition-transform duration-700" />
+        </Link>
+
+        <Link to="/mistakes" className="relative group overflow-hidden bg-white border-2 border-slate-100 rounded-[2.5rem] p-10 shadow-xl transition-all hover:border-rose-200 hover:shadow-rose-100 hover:scale-[1.02] active:scale-95">
+          <div className="relative z-10 flex flex-col h-full justify-between gap-8">
+            <div className="bg-rose-100 w-16 h-16 rounded-2xl flex items-center justify-center text-rose-600">
+              <AlertCircle size={32} />
+            </div>
+            <div>
+              <h3 className="text-3xl font-black text-slate-800 mb-2">错题集回顾</h3>
+              <p className="text-slate-500 font-medium">针对性攻克薄弱环节，支持查看详细解析。</p>
+            </div>
+            <div className={`text-sm font-bold uppercase tracking-widest ${mistakeCount > 0 ? 'text-rose-500' : 'text-slate-400'}`}>
+              当前错题: {mistakeCount} 道
+            </div>
+          </div>
+        </Link>
       </div>
 
-      <div className="bg-white rounded-3xl p-8 mt-12 flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-200 shadow-sm">
-        <div className="space-y-2">
-          <h3 className="text-xl font-bold text-slate-900">回顾错题集</h3>
-          <p className="text-slate-500">
-            练习过程中所有的错误回答都会自动记录，方便您进行针对性强化。
-          </p>
+      <div className="bg-slate-900 rounded-[2rem] p-8 mt-12 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+        <div className="flex items-center gap-6">
+           <div className="bg-white/10 p-4 rounded-2xl text-indigo-400">
+             <BarChart3 size={32} />
+           </div>
+           <div>
+             <h4 className="text-white text-xl font-bold">学习进度统计</h4>
+             <p className="text-slate-400">基于 691 道题的全量正确率分析报告。</p>
+           </div>
         </div>
-        <a 
-          href="#/mistakes" 
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-100 whitespace-nowrap"
-        >
-          查看错题集
-        </a>
+        <Link to="/stats" className="bg-white text-slate-900 px-8 py-3 rounded-xl font-black hover:bg-indigo-50 transition-all">
+          查看报告
+        </Link>
       </div>
     </div>
   );

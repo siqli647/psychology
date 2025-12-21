@@ -5,19 +5,12 @@ export enum QuestionType {
   TrueFalse = 'TrueFalse'
 }
 
-export enum QuizSection {
-  Part1 = 'Part1',
-  Part2 = 'Part2',
-  Part3 = 'Part3'
-}
-
 export interface Question {
   id: string;
   text: string;
-  options?: string[]; // A, B, C, D...
-  correctAnswer: string | string[]; // "A" or ["A", "B"] or "True"
+  options?: string[];
+  correctAnswer: string | string[];
   type: QuestionType;
-  section: QuizSection;
   explanation?: string;
 }
 
