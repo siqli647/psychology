@@ -1,12 +1,23 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { QUESTIONS } from '../constants';
 import { getStoredStats, clearAllStats } from '../utils';
-import { AlertTriangle, Trophy, Trash2, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, Trophy, Trash2, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Stats: React.FC = () => {
+  const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  useEffect(() => {
+    let timer: number;
+    if (isConfirming) {
+      timer = window.setTimeout(() => setIsConfirming(false), 3000);
+    }
+    return () => clearTimeout(timer);
+  }, [isConfirming]);
 
   const data = useMemo(() => {
     const stats = getStoredStats();
@@ -35,10 +46,14 @@ const Stats: React.FC = () => {
   }, [refreshKey]);
 
   const handleClearData = () => {
-    if (window.confirm("确定要永久清空所有的练习记录和错题集吗？此操作不可撤销。")) {
-      clearAllStats();
-      setRefreshKey(prev => prev + 1);
+    if (!isConfirming) {
+      setIsConfirming(true);
+      return;
     }
+    // 关键修复：清除数据后不使用 reload()，而是直接跳转
+    clearAllStats();
+    setIsConfirming(false);
+    navigate('/');
   };
 
   return (
@@ -142,9 +157,14 @@ const Stats: React.FC = () => {
             </p>
             <button
               onClick={handleClearData}
-              className="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold transition-colors shadow-sm"
+              className={`w-full py-2 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 ${
+                isConfirming 
+                  ? 'bg-rose-600 text-white animate-pulse' 
+                  : 'bg-rose-100 text-rose-600 hover:bg-rose-200'
+              }`}
             >
-              清空本地记录
+              {isConfirming ? <ShieldAlert size={14} /> : null}
+              {isConfirming ? '再次点击确认' : '清空本地记录'}
             </button>
           </div>
         </div>

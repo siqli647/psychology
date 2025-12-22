@@ -1,12 +1,12 @@
-
 import { UserStats } from './types';
 
 const STORAGE_KEY = 'psy_prep_stats_v2';
+const PROGRESS_KEY = 'psy_prep_quiz_progress';
 
 export const getStoredStats = (): UserStats => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return {};
+    if (!stored || stored === '{}') return {};
     return JSON.parse(stored);
   } catch (e) {
     console.error("无法读取本地练习记录:", e);
@@ -43,8 +43,29 @@ export const updateQuestionStats = (
   return stats;
 };
 
+export const getQuizProgress = (): number => {
+  const progress = localStorage.getItem(PROGRESS_KEY);
+  if (!progress) return 0;
+  const val = parseInt(progress, 10);
+  return isNaN(val) ? 0 : val;
+};
+
+export const saveQuizProgress = (index: number) => {
+  localStorage.setItem(PROGRESS_KEY, index.toString());
+};
+
 export const clearAllStats = () => {
-  localStorage.removeItem(STORAGE_KEY);
+  // 彻底清除已知的所有相关 key
+  const keys = [STORAGE_KEY, PROGRESS_KEY, 'psy_prep_stats', 'psy_prep_quiz_progress'];
+  keys.forEach(k => localStorage.removeItem(k));
+  
+  // 备用：清除所有带前缀的 key
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('psy_prep_')) {
+      localStorage.removeItem(key);
+    }
+  }
 };
 
 // Fisher-Yates shuffle

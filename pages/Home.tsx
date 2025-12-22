@@ -1,13 +1,49 @@
-import React from 'react';
-import { Play, AlertCircle, BarChart3 } from 'lucide-react';
+
+import React, { useState, useMemo, useEffect } from 'react';
+import { Play, AlertCircle, BarChart3, RotateCcw, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { QUESTIONS } from '../constants';
-import { getStoredStats } from '../utils';
+import { getStoredStats, clearAllStats, getQuizProgress } from '../utils';
 
 const Home: React.FC = () => {
-  const stats = getStoredStats();
-  const mistakeCount = QUESTIONS.filter(q => (stats[q.id]?.mistakeCount || 0) > 0).length;
-  const answeredCount = Object.keys(stats).length;
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  const { answeredCount, mistakeCount, currentProgress } = useMemo(() => {
+    const stats = getStoredStats();
+    const answered = Object.keys(stats || {}).length;
+    const mistakes = QUESTIONS.filter(q => (stats?.[q.id]?.mistakeCount || 0) > 0).length;
+    const progress = getQuizProgress();
+    
+    return { 
+      answeredCount: answered, 
+      mistakeCount: mistakes,
+      currentProgress: progress 
+    };
+  }, [refreshKey]);
+
+  // 3秒后自动退出确认状态
+  useEffect(() => {
+    let timer: number;
+    if (isConfirming) {
+      timer = window.setTimeout(() => setIsConfirming(false), 3000);
+    }
+    return () => clearTimeout(timer);
+  }, [isConfirming]);
+
+  const handleResetClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!isConfirming) {
+      setIsConfirming(true);
+      return;
+    }
+    
+    // 执行重置逻辑
+    clearAllStats();
+    setIsConfirming(false);
+    // 关键修复：通过改变 key 强制 useMemo 重新计算，实现 UI 归零
+    setRefreshKey(prev => prev + 1);
+  };
 
   return (
     <div className="space-y-8 pb-20">
@@ -28,11 +64,15 @@ const Home: React.FC = () => {
               <Play fill="currentColor" size={32} />
             </div>
             <div>
-              <h3 className="text-3xl font-black text-white mb-2">全库顺序练习</h3>
-              <p className="text-indigo-100 font-medium">按顺序挑战全部 691 道真题，沉浸式刷题体验。</p>
+              <h3 className="text-3xl font-black text-white mb-2">
+                {currentProgress > 0 ? '继续顺序练习' : '开始顺序练习'}
+              </h3>
+              <p className="text-indigo-100 font-medium">
+                {currentProgress > 0 ? `当前正处于第 ${currentProgress + 1} 题` : '按顺序挑战全部 691 道真题，沉浸式刷题体验。'}
+              </p>
             </div>
             <div className="text-indigo-100 text-sm font-bold uppercase tracking-widest">
-              总进度: {answeredCount} / {QUESTIONS.length}
+              累计已答: {answeredCount} / {QUESTIONS.length}
             </div>
           </div>
           <div className="absolute -right-12 -bottom-12 bg-white/10 w-64 h-64 rounded-full group-hover:scale-150 transition-transform duration-700" />
@@ -54,19 +94,33 @@ const Home: React.FC = () => {
         </Link>
       </div>
 
-      <div className="bg-slate-900 rounded-[2rem] p-8 mt-12 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+      <div className="bg-slate-900 rounded-[2rem] p-8 mt-12 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl transition-all">
         <div className="flex items-center gap-6">
            <div className="bg-white/10 p-4 rounded-2xl text-indigo-400">
              <BarChart3 size={32} />
            </div>
            <div>
              <h4 className="text-white text-xl font-bold">学习进度统计</h4>
-             <p className="text-slate-400">基于 691 道题的全量正确率分析报告。</p>
+             <p className="text-slate-400 font-medium">基于 691 道题的全量正确率分析报告。</p>
            </div>
         </div>
-        <Link to="/stats" className="bg-white text-slate-900 px-8 py-3 rounded-xl font-black hover:bg-indigo-50 transition-all">
-          查看报告
-        </Link>
+        <div className="flex gap-4">
+          <button 
+            type="button"
+            onClick={handleResetClick}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all border active:scale-95 shadow-lg ${
+              isConfirming 
+                ? 'bg-rose-600 text-white border-rose-500 animate-pulse' 
+                : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+            }`}
+          >
+            {isConfirming ? <ShieldAlert size={18} /> : <RotateCcw size={18} />}
+            {isConfirming ? '再次点击确认' : '重置进度'}
+          </button>
+          <Link to="/stats" className="bg-white text-slate-900 px-8 py-3 rounded-xl font-black hover:bg-indigo-50 transition-all flex items-center active:scale-95 shadow-lg">
+            查看报告
+          </Link>
+        </div>
       </div>
     </div>
   );

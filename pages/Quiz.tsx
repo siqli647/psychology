@@ -1,20 +1,27 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QUESTIONS } from '../constants';
 import { Question, QuestionType } from '../types';
-import { updateQuestionStats } from '../utils';
-import { ArrowRight, Save, Home } from 'lucide-react';
+import { updateQuestionStats, getQuizProgress, saveQuizProgress } from '../utils';
+import { ArrowRight, Save, Home, RefreshCw } from 'lucide-react';
 
 const Quiz: React.FC = () => {
   const navigate = useNavigate();
   
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // Initialize from persisted progress
+  const [currentIndex, setCurrentIndex] = useState(() => getQuizProgress());
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [showSaveToast, setShowSaveToast] = useState(false);
 
   const currentQuestion = QUESTIONS[currentIndex];
+
+  // Save progress whenever currentIndex changes
+  useEffect(() => {
+    saveQuizProgress(currentIndex);
+  }, [currentIndex]);
 
   const handleOptionSelect = (optionLabel: string) => {
     if (isSubmitted) return;
@@ -51,7 +58,17 @@ const Quiz: React.FC = () => {
       setIsCorrect(false);
     } else {
       alert("全库 691 道题已全部练习完成！");
+      saveQuizProgress(0); // Reset progress on completion
       navigate('/');
+    }
+  };
+
+  const jumpToStart = () => {
+    if (window.confirm("确定要返回第一题开始练习吗？")) {
+      setCurrentIndex(0);
+      setSelectedAnswers([]);
+      setIsSubmitted(false);
+      setIsCorrect(false);
     }
   };
 
@@ -62,11 +79,22 @@ const Quiz: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto pb-24 relative">
-      <div className={`fixed top-20 right-4 bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 transition-all duration-300 z-50 ${showSaveToast ? 'opacity-100' : 'opacity-0'}`}><Save size={16} /><span>进度已保存</span></div>
-      <div className="mb-6 flex items-center justify-between text-sm text-slate-500 font-medium">
-        <button onClick={() => navigate('/')} className="flex items-center gap-1 hover:text-indigo-600 transition-colors"><Home size={16}/> 退出练习</button>
-        <span className="font-mono">全库进度: {currentIndex + 1} / {QUESTIONS.length}</span>
+      <div className={`fixed top-20 right-4 bg-emerald-600 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 transition-all duration-300 z-50 ${showSaveToast ? 'opacity-100' : 'opacity-0'}`}>
+        <Save size={16} /><span>进度已保存</span>
       </div>
+      
+      <div className="mb-6 flex items-center justify-between text-sm text-slate-500 font-medium">
+        <button onClick={() => navigate('/')} className="flex items-center gap-1 hover:text-indigo-600 transition-colors">
+          <Home size={16}/> 退出练习
+        </button>
+        <div className="flex items-center gap-4">
+          <button onClick={jumpToStart} className="flex items-center gap-1 hover:text-indigo-600 transition-colors">
+            <RefreshCw size={14}/> 从头开始
+          </button>
+          <span className="font-mono bg-slate-100 px-2 py-1 rounded">进度: {currentIndex + 1} / {QUESTIONS.length}</span>
+        </div>
+      </div>
+
       <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 overflow-hidden">
         <div className="p-8 md:p-10 bg-slate-50/50 border-b border-slate-100">
           <span className="px-3 py-1 text-xs font-bold rounded-full bg-indigo-100 text-indigo-700 uppercase mb-4 inline-block">ID: {currentQuestion.id} | {currentQuestion.type}</span>
