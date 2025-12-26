@@ -1,3 +1,4 @@
+
 import { UserStats } from './types';
 
 const STORAGE_KEY = 'psy_prep_stats_v2';
@@ -55,17 +56,11 @@ export const saveQuizProgress = (index: number) => {
 };
 
 export const clearAllStats = () => {
-  // 彻底清除已知的所有相关 key
-  const keys = [STORAGE_KEY, PROGRESS_KEY, 'psy_prep_stats', 'psy_prep_quiz_progress'];
-  keys.forEach(k => localStorage.removeItem(k));
+  // 1. 清除所有数据
+  localStorage.clear();
   
-  // 备用：清除所有带前缀的 key
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith('psy_prep_')) {
-      localStorage.removeItem(key);
-    }
-  }
+  // 2. 派发自定义事件，通知 App 组件显示“已删除”页面
+  window.dispatchEvent(new CustomEvent('app-reset-triggered'));
 };
 
 // Fisher-Yates shuffle
